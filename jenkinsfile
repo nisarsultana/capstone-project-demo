@@ -1,0 +1,21 @@
+node{
+    stage('code checkout'){
+     git 'https://github.com/nisarsultana/capstone-project-demo.git'   
+    }
+    stage('code build'){
+      sh 'mvn clean package'  
+    }
+    stage('containerize'){
+     sh 'docker build -t nisars/insure-me:1.0 .'   
+    }
+    stage('push to docker hub'){
+        withCredentials([string(credentialsId: 'dockerhubpaswd', variable: 'dockerhubpaswd')]) {
+        sh "docker login -u nisars -p ${dockerhubpaswd}"
+        sh 'docker push nisars/insure-me:1.0'
+} 
+    }
+    stage('deploy'){
+        ansiblePlaybook become: true, credentialsId: 'ansible-ssh-jenkins-key', disableHostKeyChecking: true, installation: 'Ansible', inventory: '/etc/ansible/hosts', playbook: 'configure-test-server.yml', vaultTmpPath: ''
+    }
+      
+    }
